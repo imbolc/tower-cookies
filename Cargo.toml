@@ -8,17 +8,20 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/imbolc/tower-cookies"
 
+[features]
+default = ["axum", "tower-layer"]
+
 [dependencies]
 cookie = { version = "0.15", features = ["percent-encode"] }
 futures-util = "0.3"
 http = "0.2"
 parking_lot = "0.11"
 pin-project = "1"
-tower-layer = "0.3"
 tower-service = "0.3"
+axum = { version = "0.2", optional = true }
+tower-layer = { version = "0.3", optional = true }
 
 [dev-dependencies]
-axum = "0.2"
 hyper = "0.14"
 rusty-hook = "0.11"
 tokio = { version = "1", features = ["full"] }

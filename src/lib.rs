@@ -9,13 +9,23 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
-use tower_layer::Layer;
 use tower_service::Service;
 
-pub type MutexCookies = Arc<Mutex<Cookies>>;
+#[cfg(feature = "tower-layer")]
+pub mod layer;
+#[cfg(feature = "tower-layer")]
+pub use layer::CookieLayer;
+
+#[cfg(feature = "axum")]
+pub mod extract;
+
+#[derive(Clone, Debug)]
+pub struct Cookies {
+    inner: Arc<Mutex<Inner>>,
+}
 
 #[derive(Debug, Default)]
-pub struct Cookies {
+pub struct Inner {
     header: Option<HeaderValue>,
     jar: Option<CookieJar>,
     changed: bool,
@@ -23,31 +33,40 @@ pub struct Cookies {
 
 impl Cookies {
     fn new(header: Option<HeaderValue>) -> Self {
-        Self {
+        let inner = Inner {
             header,
             ..Default::default()
+        };
+        Self {
+            inner: Arc::new(Mutex::new(inner)),
         }
     }
 
     pub fn add(&mut self, cookie: Cookie<'static>) {
-        self.changed = true;
-        self.jar().add(cookie);
+        let mut inner = self.inner.lock();
+        inner.changed = true;
+        inner.jar().add(cookie);
     }
 
-    pub fn get(&mut self, name: &str) -> Option<&Cookie<'static>> {
-        self.changed = true;
-        self.jar().get(name)
+    pub fn get(&mut self, name: &str) -> Option<Cookie> {
+        let mut inner = self.inner.lock();
+        inner.changed = true;
+        inner.jar().get(name).cloned()
     }
 
     pub fn remove(&mut self, cookie: Cookie<'static>) {
-        self.changed = true;
-        self.jar().remove(cookie);
+        let mut inner = self.inner.lock();
+        inner.changed = true;
+        inner.jar().remove(cookie);
     }
 
-    pub fn iter(&mut self) -> cookie::Iter<'_> {
-        self.jar().iter()
+    pub fn list(&mut self) -> Vec<Cookie> {
+        let mut inner = self.inner.lock();
+        inner.jar().iter().cloned().collect()
     }
+}
 
+impl Inner {
     /// Cached jar
     fn jar(&mut self) -> &mut CookieJar {
         if self.jar.is_none() {
@@ -99,7 +118,7 @@ where
 
     fn call(&mut self, mut req: Request<ReqBody>) -> Self::Future {
         let value = req.headers().get(header::COOKIE).cloned();
-        let cookies = Arc::new(Mutex::new(Cookies::new(value)));
+        let cookies = Cookies::new(value);
         req.extensions_mut().insert(cookies.clone());
 
         ResponseFuture {
@@ -115,7 +134,7 @@ where
 pub struct ResponseFuture<F> {
     #[pin]
     future: F,
-    cookies: MutexCookies,
+    cookies: Cookies,
 }
 
 impl<F, ResBody, E> Future for ResponseFuture<F>
@@ -128,7 +147,7 @@ where
         let this = self.project();
         let mut res = ready!(this.future.poll(cx)?);
 
-        let mut cookies = this.cookies.lock();
+        let mut cookies = this.cookies.inner.lock();
         if cookies.changed {
             let values: Vec<_> = cookies
                 .jar()
@@ -145,23 +164,11 @@ where
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct CookieLayer;
-
-impl<S> Layer<S> for CookieLayer {
-    type Service = CookieService<S>;
-
-    fn layer(&self, inner: S) -> Self::Service {
-        CookieService { inner }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use axum::{
         body::{Body, BoxBody},
-        extract::Extension,
         handler::get,
         routing::BoxRoute,
         Router,
@@ -172,9 +179,9 @@ mod tests {
         Router::new()
             .route(
                 "/list",
-                get(|cookies: Extension<MutexCookies>| async move {
+                get(|mut cookies: Cookies| async move {
                     let mut items = cookies
-                        .lock()
+                        .list()
                         .iter()
                         .map(|c| format!("{}={}", c.name(), c.value()))
                         .collect::<Vec<_>>();
@@ -184,15 +191,15 @@ mod tests {
             )
             .route(
                 "/add",
-                get(|cookies: Extension<MutexCookies>| async move {
-                    cookies.lock().add(Cookie::new("baz", "3"));
-                    cookies.lock().add(Cookie::new("spam", "4"));
+                get(|mut cookies: Cookies| async move {
+                    cookies.add(Cookie::new("baz", "3"));
+                    cookies.add(Cookie::new("spam", "4"));
                 }),
             )
             .route(
                 "/remove",
-                get(|cookies: Extension<MutexCookies>| async move {
-                    cookies.lock().remove(Cookie::new("foo", ""));
+                get(|mut cookies: Cookies| async move {
+                    cookies.remove(Cookie::new("foo", ""));
                 }),
             )
             .layer(CookieLayer)
@@ -238,7 +245,7 @@ mod tests {
         let res = app().oneshot(req).await.unwrap();
         let mut hdrs = res.headers().get_all(header::SET_COOKIE).iter();
         let hdr = hdrs.next().unwrap().to_str().unwrap();
-        assert!(hdr.starts_with("foo=; Max-Age=0; Expires=Tue"));
+        assert!(hdr.starts_with("foo=; Max-Age=0"));
         assert_eq!(hdrs.next(), None);
     }
 }

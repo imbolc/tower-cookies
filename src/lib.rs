@@ -1,4 +1,5 @@
-use cookie::{Cookie, CookieJar};
+pub use cookie::Cookie;
+use cookie::CookieJar;
 use futures_util::ready;
 use http::{header, HeaderValue, Request, Response};
 use parking_lot::Mutex;
@@ -123,7 +124,7 @@ where
 
         ResponseFuture {
             future: self.inner.call(req),
-            cookies: cookies.clone(),
+            cookies,
         }
     }
 }

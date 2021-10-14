@@ -18,7 +18,7 @@ where
             None => {
                 return Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    "Can't extract cookies: extension has been taken by another extractor",
+                    "Can't extract cookies: extensions has been taken by another extractor",
                 ))
             }
         };
@@ -26,7 +26,7 @@ where
             Some(cookies) => Ok(cookies.clone()),
             None => Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Can't extract cookies: add `CookieLayer`",
+                "Can't extract cookies. Is CookieLayer enabled?",
             )),
         }
     }

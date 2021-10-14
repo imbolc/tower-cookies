@@ -3,7 +3,7 @@ use cookie::CookieJar;
 use futures_util::ready;
 use http::{header, HeaderValue, Request, Response};
 use parking_lot::Mutex;
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 use std::future::Future;
 use std::sync::Arc;
 use std::{
@@ -129,13 +129,14 @@ where
     }
 }
 
-/// Response future for [`CookieService`].
-#[pin_project]
-#[derive(Debug)]
-pub struct ResponseFuture<F> {
-    #[pin]
-    future: F,
-    cookies: Cookies,
+pin_project! {
+    /// Response future for [`CookieService`].
+    #[derive(Debug)]
+    pub struct ResponseFuture<F> {
+        #[pin]
+        future: F,
+        cookies: Cookies,
+    }
 }
 
 impl<F, ResBody, E> Future for ResponseFuture<F>

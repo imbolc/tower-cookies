@@ -16,10 +16,10 @@ cookie = { version = "0.15", features = ["percent-encode"] }
 futures-util = "0.3"
 http = "0.2"
 parking_lot = "0.11"
-pin-project = "1"
 tower-service = "0.3"
 axum = { version = "0.2", optional = true }
 tower-layer = { version = "0.3", optional = true }
+pin-project-lite = "0.2"
 
 [dev-dependencies]
 hyper = "0.14"

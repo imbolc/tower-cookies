@@ -1,6 +1,6 @@
 [package]
 name = "tower-cookies"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 description = "A tower (axum) cookies manager"
 keywords = ["tower", "axum"]

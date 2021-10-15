@@ -9,7 +9,6 @@
 //! # use axum::{handler::get, Router};
 //! # use std::net::SocketAddr;
 //! # use tower_cookies::{Cookie, CookieLayer, Cookies};
-//! #
 //! # #[tokio::main]
 //! # async fn main() {
 //! let app = Router::new()

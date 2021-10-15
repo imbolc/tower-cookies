@@ -12,7 +12,6 @@ Here's an example of an axum app keeping track of your visits to the page (full 
 [examples/counter.rs][example]):
 
 ```rust
-#
 let app = Router::new()
     .route(
         "/",

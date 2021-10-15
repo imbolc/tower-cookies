@@ -1,87 +1,64 @@
-//! # A [tower] ([axum]) cookies manager
+//! A cookie manager middleware built on top of [tower].
 //!
-//! ## Usage
+//! # Example
 //!
-//! Here's an example of an axum app keeping track of your visits to the page (full example is in
-//! [examples/counter.rs][example]):
+//! With [`axum`]:
 //!
-//!```rust,no_run
-//! # use axum::{handler::get, Router};
-//! # use std::net::SocketAddr;
-//! # use tower_cookies::{Cookie, CookieLayer, Cookies};
-//! # #[tokio::main]
-//! # async fn main() {
-//! let app = Router::new()
-//!     .route(
-//!         "/",
-//!         // Using `Cookies` extractor to access cookies
-//!         get(|mut cookies: Cookies| async move {
-//!             let cookie_name = "visited";
+//! ```rust,no_run
+//! use axum::{handler::get, Router};
+//! use std::net::SocketAddr;
+//! use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 //!
-//!             // Getting a cookie by it's name
-//!             let visited = if let Some(cookie) = cookies.get(cookie_name) {
-//!                 cookie.value().parse().ok().unwrap_or(0)
-//!             } else {
-//!                 0
-//!             };
+//! # #[cfg(feature = "axum")]
+//! #[tokio::main]
+//! async fn main() {
+//!     let app = Router::new()
+//!         .route("/", get(handler))
+//!         .layer(CookieManagerLayer::new());
 //!
-//!             if visited > 10 {
-//!                 // Removing the cookie
-//!                 cookies.remove(Cookie::new(cookie_name, ""));
-//!                 "counter has been reset".to_string()
-//!             } else {
-//!                 // Adding (rewriting) the cookie
-//!                 cookies.add(Cookie::new(cookie_name, (visited + 1).to_string()));
-//!                 format!("You've been here {} times before", visited)
-//!             }
-//!         }),
-//!     )
-//!     .layer(CookieLayer);
-//! #     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-//! #     axum::Server::bind(&addr)
-//! #         .serve(app.into_make_service())
-//! #         .await
-//! #         .unwrap();
-//! # }
+//!     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+//!     axum::Server::bind(&addr)
+//!         .serve(app.into_make_service())
+//!         .await
+//!         .unwrap();
+//! }
+//!
+//! # #[cfg(not(feature = "axum"))]
+//! # fn main() {}
+//!
+//! async fn handler(cookies: Cookies) -> &'static str {
+//!     cookies.add(Cookie::new("hello_world", "hello_world"));
+//!
+//!     "Check your cookies."
+//! }
 //! ```
 //!
 //! [tower]: https://crates.io/crates/tower
-//! [axum]: https://crates.io/crates/axum
-//! [example]: https://github.com/imbolc/tower-cookies/blob/main/examples/counter.rs
+
+#![warn(clippy::all, missing_docs, nonstandard_style, future_incompatible)]
+#![forbid(unsafe_code)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+use cookie::CookieJar;
+use http::HeaderValue;
+use parking_lot::Mutex;
+use std::sync::Arc;
+
+#[doc(inline)]
+pub use self::service::{CookieManager, CookieManagerLayer};
 
 pub use cookie::Cookie;
-use cookie::CookieJar;
-use futures_util::ready;
-use http::{header, HeaderValue, Request, Response};
-#[cfg(feature = "tower-layer")]
-pub use layer::CookieLayer;
-use parking_lot::Mutex;
-use pin_project_lite::pin_project;
-use std::future::Future;
-use std::sync::Arc;
-use std::{
-    pin::Pin,
-    task::{Context, Poll},
-};
-use tower_service::Service;
-
-#[cfg(feature = "tower-layer")]
-pub mod layer;
 
 #[cfg(feature = "axum")]
-pub mod extract;
+#[cfg_attr(docsrs, doc(cfg(feature = "axum")))]
+mod extract;
 
-/// A parsed on-demand cookie jar, can be used as an axum extractor
+pub mod service;
+
+/// A parsed on-demand cookie jar.
 #[derive(Clone, Debug)]
 pub struct Cookies {
     inner: Arc<Mutex<Inner>>,
-}
-
-#[derive(Debug, Default)]
-struct Inner {
-    header: Option<HeaderValue>,
-    jar: Option<CookieJar>,
-    changed: bool,
 }
 
 impl Cookies {
@@ -95,38 +72,46 @@ impl Cookies {
         }
     }
 
-    /// Adds cookie to this jar. If a cookie with the same name already exists, it is replaced with
-    /// cookie.
-    pub fn add(&mut self, cookie: Cookie<'static>) {
+    /// Adds [`Cookie`] to this jar. If a [`Cookie`] with the same name already exists, it is
+    /// replaced with provided cookie.
+    pub fn add(&self, cookie: Cookie<'static>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
         inner.jar().add(cookie);
     }
 
-    /// Returns the Cookie with the given name. If no such cookie exists, returns None.
-    pub fn get(&mut self, name: &str) -> Option<Cookie> {
+    /// Returns the [`Cookie`] with the given name. Returns [`None`] if it doesn't exist.
+    pub fn get(&self, name: &str) -> Option<Cookie> {
         let mut inner = self.inner.lock();
         inner.changed = true;
         inner.jar().get(name).cloned()
     }
 
-    /// Removes cookie from this jar.
-    pub fn remove(&mut self, cookie: Cookie<'static>) {
+    /// Removes [`Cookie`] from this jar.
+    pub fn remove(&self, cookie: Cookie<'static>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
         inner.jar().remove(cookie);
     }
 
-    /// Returns all the cookies present in this jar. It collects cookies into a vector instead of
-    /// iterating through them to minimize the mutex locking time.
-    pub fn list(&mut self) -> Vec<Cookie> {
+    /// Returns all the [`Cookie`]s present in this jar.
+    ///
+    /// This method collects [`Cookie`]s into a vector instead of iterating through them to
+    /// minimize the mutex locking time.
+    pub fn list(&self) -> Vec<Cookie> {
         let mut inner = self.inner.lock();
         inner.jar().iter().cloned().collect()
     }
 }
 
+#[derive(Debug, Default)]
+struct Inner {
+    header: Option<HeaderValue>,
+    jar: Option<CookieJar>,
+    changed: bool,
+}
+
 impl Inner {
-    /// Cached jar
     fn jar(&mut self) -> &mut CookieJar {
         if self.jar.is_none() {
             let jar = self
@@ -151,97 +136,24 @@ fn jar_from_str(s: &str) -> CookieJar {
     jar
 }
 
-/// A tower service to put `Cookies` into `Request.extensions` and then apply possible changes
-/// to the response.
-#[derive(Clone, Debug)]
-pub struct CookieService<S> {
-    inner: S,
-}
-
-impl<S> CookieService<S> {
-    pub fn new(inner: S) -> Self {
-        Self { inner }
-    }
-}
-
-impl<ReqBody, ResBody, S> Service<Request<ReqBody>> for CookieService<S>
-where
-    S: Service<Request<ReqBody>, Response = Response<ResBody>>,
-{
-    type Response = S::Response;
-    type Error = S::Error;
-    type Future = ResponseFuture<S::Future>;
-
-    #[inline]
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx)
-    }
-
-    fn call(&mut self, mut req: Request<ReqBody>) -> Self::Future {
-        let value = req.headers().get(header::COOKIE).cloned();
-        let cookies = Cookies::new(value);
-        req.extensions_mut().insert(cookies.clone());
-
-        ResponseFuture {
-            future: self.inner.call(req),
-            cookies,
-        }
-    }
-}
-
-pin_project! {
-    /// Response future for [`CookieService`].
-    #[derive(Debug)]
-    pub struct ResponseFuture<F> {
-        #[pin]
-        future: F,
-        cookies: Cookies,
-    }
-}
-
-impl<F, ResBody, E> Future for ResponseFuture<F>
-where
-    F: Future<Output = Result<Response<ResBody>, E>>,
-{
-    type Output = F::Output;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-        let mut res = ready!(this.future.poll(cx)?);
-
-        let mut cookies = this.cookies.inner.lock();
-        if cookies.changed {
-            let values: Vec<_> = cookies
-                .jar()
-                .delta()
-                .filter_map(|c| HeaderValue::from_str(&c.to_string()).ok())
-                .collect();
-            let headers = res.headers_mut();
-            for value in values {
-                headers.append(header::SET_COOKIE, value);
-            }
-        }
-
-        Poll::Ready(Ok(res))
-    }
-}
-
-#[cfg(test)]
+#[cfg(all(test, feature = "axum"))]
 mod tests {
-    use super::*;
+    use crate::{CookieManagerLayer, Cookies};
     use axum::{
         body::{Body, BoxBody},
         handler::get,
         routing::BoxRoute,
         Router,
     };
+    use cookie::Cookie;
+    use http::{header, Request};
     use tower::ServiceExt;
 
     fn app() -> Router<BoxRoute> {
         Router::new()
             .route(
                 "/list",
-                get(|mut cookies: Cookies| async move {
+                get(|cookies: Cookies| async move {
                     let mut items = cookies
                         .list()
                         .iter()
@@ -253,18 +165,18 @@ mod tests {
             )
             .route(
                 "/add",
-                get(|mut cookies: Cookies| async move {
+                get(|cookies: Cookies| async move {
                     cookies.add(Cookie::new("baz", "3"));
                     cookies.add(Cookie::new("spam", "4"));
                 }),
             )
             .route(
                 "/remove",
-                get(|mut cookies: Cookies| async move {
+                get(|cookies: Cookies| async move {
                     cookies.remove(Cookie::new("foo", ""));
                 }),
             )
-            .layer(CookieLayer)
+            .layer(CookieManagerLayer::new())
             .boxed()
     }
 

@@ -5,9 +5,13 @@
 //! Here's an example of an axum app keeping track of your visits to the page (full example is in
 //! [examples/counter.rs][example]):
 //!
-//! ```rust,no_run
-//! use tower_cookies::{Cookie, CookieLayer, Cookies};
-//!
+//!```rust,no_run
+//! # use axum::{handler::get, Router};
+//! # use std::net::SocketAddr;
+//! # use tower_cookies::{Cookie, CookieLayer, Cookies};
+//! #
+//! # #[tokio::main]
+//! # async fn main() {
 //! let app = Router::new()
 //!     .route(
 //!         "/",
@@ -22,6 +26,12 @@
 //!         }),
 //!     )
 //!     .layer(CookieLayer);
+//! #     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+//! #     axum::Server::bind(&addr)
+//! #         .serve(app.into_make_service())
+//! #         .await
+//! #         .unwrap();
+//! # }
 //! ```
 //!
 //! [tower]: https://crates.io/crates/tower

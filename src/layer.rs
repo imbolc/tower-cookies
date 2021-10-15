@@ -1,6 +1,7 @@
 use crate::CookieService;
 use tower_layer::Layer;
 
+/// A layer to apply `CookieService` middleware
 #[derive(Clone, Debug)]
 pub struct CookieLayer;
 

@@ -2,8 +2,8 @@
 name = "tower-cookies"
 version = "0.1.0"
 edition = "2018"
-description = "A tower (hyper, axum, warp) service to manage cookies"
-keywords = ["tower", "hyper", "axum", "warp"]
+description = "A tower (axum) cookies manager"
+keywords = ["tower", "axum"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/imbolc/tower-cookies"
@@ -12,14 +12,14 @@ repository = "https://github.com/imbolc/tower-cookies"
 default = ["axum", "tower-layer"]
 
 [dependencies]
+axum = { version = "0.2", optional = true }
 cookie = { version = "0.15", features = ["percent-encode"] }
 futures-util = "0.3"
 http = "0.2"
 parking_lot = "0.11"
-tower-service = "0.3"
-axum = { version = "0.2", optional = true }
-tower-layer = { version = "0.3", optional = true }
 pin-project-lite = "0.2"
+tower-layer = { version = "0.3", optional = true }
+tower-service = "0.3"
 
 [dev-dependencies]
 hyper = "0.14"

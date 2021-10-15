@@ -1,7 +1,39 @@
+//! # A [tower] ([axum]) cookies manager
+//!
+//! ## Usage
+//!
+//! Here's an example of an axum app keeping track of your visits to the page (full example is in
+//! [examples/counter.rs][example]):
+//!
+//! ```rust,no_run
+//! use tower_cookies::{Cookie, CookieLayer, Cookies};
+//!
+//! let app = Router::new()
+//!     .route(
+//!         "/",
+//!         get(|mut cookies: Cookies| async move {
+//!             let visited = if let Some(cookie) = cookies.get("visited") {
+//!                 cookie.value().parse().ok().unwrap_or(0)
+//!             } else {
+//!                 0
+//!             };
+//!             cookies.add(Cookie::new("visited", (visited + 1).to_string()));
+//!             format!("You've been here {} times before", visited)
+//!         }),
+//!     )
+//!     .layer(CookieLayer);
+//! ```
+//!
+//! [tower]: https://crates.io/crates/tower
+//! [axum]: https://crates.io/crates/axum
+//! [example]: https://github.com/imbolc/tower-cookies/blob/main/examples/counter.rs
+
 pub use cookie::Cookie;
 use cookie::CookieJar;
 use futures_util::ready;
 use http::{header, HeaderValue, Request, Response};
+#[cfg(feature = "tower-layer")]
+pub use layer::CookieLayer;
 use parking_lot::Mutex;
 use pin_project_lite::pin_project;
 use std::future::Future;
@@ -14,19 +46,18 @@ use tower_service::Service;
 
 #[cfg(feature = "tower-layer")]
 pub mod layer;
-#[cfg(feature = "tower-layer")]
-pub use layer::CookieLayer;
 
 #[cfg(feature = "axum")]
 pub mod extract;
 
+/// A parsed on-demand cookie jar, can be used as an axum extractor
 #[derive(Clone, Debug)]
 pub struct Cookies {
     inner: Arc<Mutex<Inner>>,
 }
 
 #[derive(Debug, Default)]
-pub struct Inner {
+struct Inner {
     header: Option<HeaderValue>,
     jar: Option<CookieJar>,
     changed: bool,
@@ -43,24 +74,30 @@ impl Cookies {
         }
     }
 
+    /// Adds cookie to this jar. If a cookie with the same name already exists, it is replaced with
+    /// cookie.
     pub fn add(&mut self, cookie: Cookie<'static>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
         inner.jar().add(cookie);
     }
 
+    /// Returns the Cookie with the given name. If no such cookie exists, returns None.
     pub fn get(&mut self, name: &str) -> Option<Cookie> {
         let mut inner = self.inner.lock();
         inner.changed = true;
         inner.jar().get(name).cloned()
     }
 
+    /// Removes cookie from this jar.
     pub fn remove(&mut self, cookie: Cookie<'static>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
         inner.jar().remove(cookie);
     }
 
+    /// Returns all the cookies present in this jar. It collects cookies into a vector instead of
+    /// iterating through them to minimize the mutex locking time.
     pub fn list(&mut self) -> Vec<Cookie> {
         let mut inner = self.inner.lock();
         inner.jar().iter().cloned().collect()
@@ -93,6 +130,8 @@ fn jar_from_str(s: &str) -> CookieJar {
     jar
 }
 
+/// A tower service to put `Cookies` into `Request.extensions` and then apply possible changes
+/// to the response.
 #[derive(Clone, Debug)]
 pub struct CookieService<S> {
     inner: S,

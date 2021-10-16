@@ -2,6 +2,8 @@ use axum::{handler::get, Router};
 use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 
+const COOKIE_NAME: &str = "visited";
+
 #[tokio::main]
 async fn main() {
     let app = Router::new()
@@ -16,11 +18,15 @@ async fn main() {
 }
 
 async fn handler(cookies: Cookies) -> String {
-    let visited = if let Some(cookie) = cookies.get("visited") {
-        cookie.value().parse().ok().unwrap_or(0)
+    let visited = cookies
+        .get(COOKIE_NAME)
+        .and_then(|c| c.value().parse().ok())
+        .unwrap_or(0);
+    if visited > 10 {
+        cookies.remove(Cookie::new(COOKIE_NAME, ""));
+        "Counter has been reset".into()
     } else {
-        0
-    };
-    cookies.add(Cookie::new("visited", (visited + 1).to_string()));
-    format!("You've been here {} times before", visited)
+        cookies.add(Cookie::new(COOKIE_NAME, (visited + 1).to_string()));
+        format!("You've been here {} times before", visited)
+    }
 }

@@ -48,7 +48,7 @@ where
 }
 
 /// Layer to apply [`CookieManager`] middleware.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct CookieManagerLayer {
     _priv: (),
 }

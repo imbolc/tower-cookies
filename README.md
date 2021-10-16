@@ -6,7 +6,7 @@
 
 A cookie manager middleware built on top of [tower].
 
-## Usage example
+## Example
 
 With [`axum`]:
 
@@ -28,12 +28,15 @@ async fn main() {
         .unwrap();
 }
 
+
 async fn handler(cookies: Cookies) -> &'static str {
     cookies.add(Cookie::new("hello_world", "hello_world"));
 
     "Check your cookies."
 }
 ```
+
+[tower]: https://crates.io/crates/tower
 
 ## Safety
 
@@ -42,5 +45,3 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 ## License
 
 This project is licensed under the [MIT license](LICENSE).
-
-[tower]: https://crates.io/crates/tower

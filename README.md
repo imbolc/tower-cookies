@@ -8,7 +8,7 @@ A cookie manager middleware built on top of [tower].
 
 ## Example
 
-With [`axum`]:
+With [axum]:
 
 ```rust
 use axum::{handler::get, Router};
@@ -35,7 +35,7 @@ async fn handler(cookies: Cookies) -> &'static str {
     "Check your cookies."
 }
 ```
-
+[axum]: https://crates.io/crates/axum
 [tower]: https://crates.io/crates/tower
 
 ## Safety

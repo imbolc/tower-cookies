@@ -2,7 +2,7 @@
 //!
 //! # Example
 //!
-//! With [`axum`]:
+//! With [axum]:
 //!
 //! ```rust,no_run
 //! use axum::{handler::get, Router};
@@ -32,7 +32,7 @@
 //!     "Check your cookies."
 //! }
 //! ```
-//!
+//! [axum]: https://crates.io/crates/axum
 //! [tower]: https://crates.io/crates/tower
 
 #![warn(clippy::all, missing_docs, nonstandard_style, future_incompatible)]

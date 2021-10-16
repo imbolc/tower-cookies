@@ -13,21 +13,13 @@ where
     type Rejection = (http::StatusCode, &'static str);
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let extensions = match req.extensions() {
-            Some(exts) => exts,
-            None => {
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Can't extract cookies: extensions has been taken by another extractor",
-                ))
-            }
-        };
-        match extensions.get::<Cookies>() {
-            Some(cookies) => Ok(cookies.clone()),
-            None => Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Can't extract cookies. Is CookieLayer enabled?",
-            )),
-        }
+        let extensions = req.extensions().ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Can't extract cookies: extensions has been taken by another extractor",
+        ))?;
+        extensions.get::<Cookies>().cloned().ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Can't extract cookies. Is `CookieManagerLayer` enabled?",
+        ))
     }
 }

@@ -15,12 +15,8 @@ async fn main() {
         .unwrap();
 }
 
-async fn handler(cookies: Cookies) -> String {
-    let visited = if let Some(cookie) = cookies.get("visited") {
-        cookie.value().parse().ok().unwrap_or(0)
-    } else {
-        0
-    };
-    cookies.add(Cookie::new("visited", (visited + 1).to_string()));
-    format!("You've been here {} times before", visited)
+async fn handler(cookies: Cookies) -> &'static str {
+    cookies.add(Cookie::new("hello_world", "hello_world"));
+
+    "Check your cookies."
 }

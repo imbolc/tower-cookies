@@ -1,51 +1,46 @@
-[![version-badge][]][crate-url]
-[![docs-badge][]][docs-url]
-[![license-badge][]][crate-url]
+[![License](https://img.shields.io/crates/l/tower-cookies.svg)](https://choosealicense.com/licenses/mit/)
+[![Crates.io](https://img.shields.io/crates/v/tower-cookies.svg)](https://crates.io/crates/tower-cookies)
+[![Documentation](https://docs.rs/tower-cookies/badge.svg)](https://docs.rs/tower-cookies)
 
 # tower-cookies
 
-## A [tower] ([axum]) cookies manager
+A cookie manager middleware built on top of [tower].
 
-### Usage
+## Example
 
-Here's an example of an axum app keeping track of your visits to the page (full example is in
-[examples/counter.rs][example]):
+With [axum]:
 
 ```rust
-let app = Router::new()
-    .route(
-        "/",
-        // Using `Cookies` extractor to access cookies
-        get(|mut cookies: Cookies| async move {
-            let cookie_name = "visited";
+use axum::{handler::get, Router};
+use std::net::SocketAddr;
+use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 
-            // Getting a cookie by it's name
-            let visited = if let Some(cookie) = cookies.get(cookie_name) {
-                cookie.value().parse().ok().unwrap_or(0)
-            } else {
-                0
-            };
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/", get(handler))
+        .layer(CookieManagerLayer::new());
 
-            if visited > 10 {
-                // Removing the cookie
-                cookies.remove(Cookie::new(cookie_name, ""));
-                "counter has been reset".to_string()
-            } else {
-                // Adding (rewriting) the cookie
-                cookies.add(Cookie::new(cookie_name, (visited + 1).to_string()));
-                format!("You've been here {} times before", visited)
-            }
-        }),
-    )
-    .layer(CookieLayer);
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
+
+async fn handler(cookies: Cookies) -> &'static str {
+    cookies.add(Cookie::new("hello_world", "hello_world"));
+
+    "Check your cookies."
+}
 ```
-
-[tower]: https://crates.io/crates/tower
 [axum]: https://crates.io/crates/axum
-[example]: https://github.com/imbolc/tower-cookies/blob/main/examples/counter.rs
+[tower]: https://crates.io/crates/tower
 
-[version-badge]: https://img.shields.io/crates/v/tower-cookies.svg
-[docs-badge]: https://docs.rs/tower-cookies/badge.svg
-[license-badge]: https://img.shields.io/crates/l/tower-cookies.svg
-[crate-url]: https://crates.io/crates/tower-cookies
-[docs-url]: https://docs.rs/tower-cookies
+## Safety
+
+This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in 100% safe Rust.
+
+## License
+
+This project is licensed under the [MIT license](LICENSE).

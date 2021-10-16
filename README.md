@@ -34,8 +34,12 @@ async fn handler(cookies: Cookies) -> &'static str {
     "Check your cookies."
 }
 ```
+
+A complete CRUD cookie example in [examples/counter.rs][example]
+
 [axum]: https://crates.io/crates/axum
 [tower]: https://crates.io/crates/tower
+[example]: https://github.com/imbolc/tower-cookies/blob/main/examples/counter.rs
 
 ## Safety
 

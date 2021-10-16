@@ -22,7 +22,6 @@
 //!         .await
 //!         .unwrap();
 //! }
-//!
 //! # #[cfg(not(feature = "axum"))]
 //! # fn main() {}
 //!

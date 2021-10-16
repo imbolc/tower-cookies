@@ -28,7 +28,6 @@ async fn main() {
         .unwrap();
 }
 
-
 async fn handler(cookies: Cookies) -> &'static str {
     cookies.add(Cookie::new("hello_world", "hello_world"));
 

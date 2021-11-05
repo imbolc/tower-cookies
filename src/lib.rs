@@ -5,7 +5,7 @@
 //! With [axum]:
 //!
 //! ```rust,no_run
-//! use axum::{handler::get, Router};
+//! use axum::{routing::get, Router};
 //! use std::net::SocketAddr;
 //! use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 //!
@@ -144,15 +144,14 @@ mod tests {
     use crate::{CookieManagerLayer, Cookies};
     use axum::{
         body::{Body, BoxBody},
-        handler::get,
-        routing::BoxRoute,
+        routing::get,
         Router,
     };
     use cookie::Cookie;
     use http::{header, Request};
     use tower::ServiceExt;
 
-    fn app() -> Router<BoxRoute> {
+    fn app() -> Router {
         Router::new()
             .route(
                 "/list",
@@ -180,7 +179,6 @@ mod tests {
                 }),
             )
             .layer(CookieManagerLayer::new())
-            .boxed()
     }
 
     async fn body_string(body: BoxBody) -> String {

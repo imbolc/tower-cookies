@@ -11,7 +11,7 @@ A cookie manager middleware built on top of [tower].
 With [axum]:
 
 ```rust
-use axum::{handler::get, Router};
+use axum::{routing::get, Router};
 use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 

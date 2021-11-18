@@ -86,7 +86,6 @@ impl Cookies {
     /// Returns the [`Cookie`] with the given name. Returns [`None`] if it doesn't exist.
     pub fn get(&self, name: &str) -> Option<Cookie> {
         let mut inner = self.inner.lock();
-        inner.changed = true;
         inner.jar().get(name).cloned()
     }
 

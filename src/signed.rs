@@ -43,7 +43,7 @@ impl<'a> SignedCookies<'a> {
     }
 }
 
-#[cfg(all(test, feature = "axum"))]
+#[cfg(all(test, feature = "signed"))]
 mod tests {
     use crate::Cookies;
     use cookie::{Cookie, Key};

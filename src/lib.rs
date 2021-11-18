@@ -50,12 +50,19 @@ use std::sync::Arc;
 #[doc(inline)]
 pub use self::service::{CookieManager, CookieManagerLayer};
 
+#[cfg(feature = "signed")]
 pub use self::signed::SignedCookies;
+
+#[cfg(feature = "signed")]
+pub use cookie::Key;
+
 pub use cookie::Cookie;
 
 #[cfg(feature = "axum")]
 #[cfg_attr(docsrs, doc(cfg(feature = "axum")))]
 mod extract;
+
+#[cfg(feature = "signed")]
 mod signed;
 
 pub mod service;
@@ -125,6 +132,7 @@ impl Cookies {
     /// assert_eq!(signed.get("foo"), Some(foo.clone()));
     /// assert_ne!(cookies.get("foo"), Some(foo));
     /// ```
+    #[cfg(feature = "signed")]
     pub fn signed<'a>(&self, key: &'a cookie::Key) -> SignedCookies<'a> {
         SignedCookies::new(self, key)
     }

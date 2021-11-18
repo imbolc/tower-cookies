@@ -9,10 +9,11 @@ license = "MIT"
 name = "tower-cookies"
 readme = "README.md"
 repository = "https://github.com/imbolc/tower-cookies"
-version = "0.2.2"
+version = "0.3.0"
 
 [features]
 default = ["axum"]
+signed = ["cookie/signed"]
 
 [dependencies]
 axum = { version = "0.3", optional = true }

@@ -55,6 +55,7 @@ pub use cookie::Cookie;
 #[cfg(feature = "axum")]
 #[cfg_attr(docsrs, doc(cfg(feature = "axum")))]
 mod extract;
+mod signed;
 
 pub mod service;
 
@@ -104,6 +105,13 @@ impl Cookies {
     pub fn list(&self) -> Vec<Cookie> {
         let mut inner = self.inner.lock();
         inner.jar().iter().cloned().collect()
+    }
+
+    /// Returns a read-only [`SignedJar`] with self as its parent jar using the key key to verify
+    /// cookies retrieved from the child jar. Any retrievals from the child jar will be made from
+    /// the parent jar.
+    pub fn signed<'a>(&self, key: &'a cookie::Key) -> signed::SignedCookies<'a> {
+        signed::SignedCookies::new(self, key)
     }
 }
 

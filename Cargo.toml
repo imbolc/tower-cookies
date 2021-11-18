@@ -16,7 +16,8 @@ default = ["axum"]
 
 [dependencies]
 axum = { version = "0.3", optional = true }
-cookie = { version = "0.15", features = ["percent-encode"] }
+# TODO conditionaly depend on "signed" feature
+cookie = { version = "0.15", features = ["percent-encode", "signed"] }
 futures-util = "0.3"
 http = "0.2"
 parking_lot = "0.11"

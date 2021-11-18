@@ -50,6 +50,7 @@ use std::sync::Arc;
 #[doc(inline)]
 pub use self::service::{CookieManager, CookieManagerLayer};
 
+pub use self::signed::SignedCookies;
 pub use cookie::Cookie;
 
 #[cfg(feature = "axum")]
@@ -60,7 +61,7 @@ mod signed;
 pub mod service;
 
 /// A parsed on-demand cookie jar.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Cookies {
     inner: Arc<Mutex<Inner>>,
 }
@@ -107,11 +108,25 @@ impl Cookies {
         inner.jar().iter().cloned().collect()
     }
 
-    /// Returns a read-only [`SignedJar`] with self as its parent jar using the key key to verify
-    /// cookies retrieved from the child jar. Any retrievals from the child jar will be made from
-    /// the parent jar.
-    pub fn signed<'a>(&self, key: &'a cookie::Key) -> signed::SignedCookies<'a> {
-        signed::SignedCookies::new(self, key)
+    /// Returns a child [`SignedCookies`] jar for manipulation with signed by `key` cookies.
+    ///
+    /// # Example:
+    /// ```
+    /// use cookie::{Cookie, Key};
+    /// use tower_cookies::Cookies;
+    ///
+    /// let cookies = Cookies::default();
+    /// let key = Key::generate();
+    /// let signed = cookies.signed(&key);
+    ///
+    /// let foo = Cookie::new("foo", "bar");
+    /// signed.add(foo.clone());
+    ///
+    /// assert_eq!(signed.get("foo"), Some(foo.clone()));
+    /// assert_ne!(cookies.get("foo"), Some(foo));
+    /// ```
+    pub fn signed<'a>(&self, key: &'a cookie::Key) -> SignedCookies<'a> {
+        SignedCookies::new(self, key)
     }
 }
 

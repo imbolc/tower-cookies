@@ -2,17 +2,17 @@ use crate::Cookies;
 use cookie::{Cookie, Key};
 
 /// A child cookie jar that authenticates its cookies.
-/// A signed child jar signs all the cookies added to it and verifies cookies retrieved from it.
-/// Any cookies stored in a SignedJar are provided integrity and authenticity. In other words,
-/// clients cannot tamper with the contents of a cookie nor can they fabricate cookie values,
-/// but the data is visible in plaintext.
+/// It signs all the cookies added to it and verifies cookies retrieved from it.
+/// Any cookies stored in a `SignedCookies` are provided integrity and authenticity. In other
+/// words, clients cannot tamper with the contents of a cookie nor can they fabricate cookie
+/// values, but the data is visible in plaintext.
 pub struct SignedCookies<'a> {
     cookies: Cookies,
     key: &'a Key,
 }
 
 impl<'a> SignedCookies<'a> {
-    /// Creates a new [`SignedCookies`] with parent `cookies` and key `key`. This method is
+    /// Creates an instance of `SignedCookies` with parent `cookies` and key `key`. This method is
     /// typically called indirectly via the `signed` method of [`Cookies`].
     pub(crate) fn new(cookies: &Cookies, key: &'a Key) -> Self {
         Self {
@@ -35,6 +35,11 @@ impl<'a> SignedCookies<'a> {
     pub fn get(&self, name: &str) -> Option<Cookie> {
         let mut inner = self.cookies.inner.lock();
         inner.jar().signed(self.key).get(name)
+    }
+
+    /// Removes the `cookie` from the parent jar.
+    pub fn remove(&self, cookie: Cookie<'static>) {
+        self.cookies.remove(cookie);
     }
 }
 
@@ -86,5 +91,17 @@ mod tests {
         let cookie = Cookie::new("foo", "bar");
         cookies.signed(&key1).add(cookie);
         assert_eq!(cookies.signed(&key2).get("foo"), None);
+    }
+
+    #[test]
+    fn remove() {
+        let key = Key::generate();
+        let cookies = Cookies::new(None);
+        let cookie = Cookie::new("foo", "bar");
+        let signed = cookies.signed(&key);
+        signed.add(cookie.clone());
+        assert!(signed.get("foo").is_some());
+        signed.remove(cookie);
+        assert!(signed.get("foo").is_none());
     }
 }

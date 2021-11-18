@@ -3,7 +3,7 @@ use cookie::{Cookie, Key};
 
 /// A child cookie jar that authenticates its cookies.
 /// It signs all the cookies added to it and verifies cookies retrieved from it.
-/// Any cookies stored in a `SignedCookies` are provided integrity and authenticity. In other
+/// Any cookies stored in `SignedCookies` are provided integrity and authenticity. In other
 /// words, clients cannot tamper with the contents of a cookie nor can they fabricate cookie
 /// values, but the data is visible in plaintext.
 pub struct SignedCookies<'a> {
@@ -29,8 +29,8 @@ impl<'a> SignedCookies<'a> {
         inner.jar().signed_mut(self.key).add(cookie);
     }
 
-    /// Returns `Cookie` with the name name and verifies the authenticity and integrity of the
-    /// cookie’s value, returning a Cookie with the authenticated value. If the cookie cannot be
+    /// Returns `Cookie` with the `name` and verifies the authenticity and integrity of the
+    /// cookie’s value, returning a `Cookie` with the authenticated value. If the cookie cannot be
     /// found, or the cookie fails to verify, None is returned.
     pub fn get(&self, name: &str) -> Option<Cookie> {
         let mut inner = self.cookies.inner.lock();

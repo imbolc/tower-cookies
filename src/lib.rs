@@ -115,7 +115,7 @@ impl Cookies {
         inner.jar().iter().cloned().collect()
     }
 
-    /// Returns a child [`SignedCookies`] jar for manipulation with signed by `key` cookies.
+    /// Returns a child [`SignedCookies`] jar for interations with signed by the `key` cookies.
     ///
     /// # Example:
     /// ```

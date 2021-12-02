@@ -1,8 +1,6 @@
 use crate::Cookies;
-use axum::{
-    async_trait,
-    extract::{FromRequest, RequestParts},
-};
+use async_trait::async_trait;
+use axum_core::extract::{FromRequest, RequestParts};
 use http::StatusCode;
 
 #[async_trait]

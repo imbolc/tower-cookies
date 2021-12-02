@@ -12,11 +12,12 @@ repository = "https://github.com/imbolc/tower-cookies"
 version = "0.3.0"
 
 [features]
-default = ["axum"]
+default = ["axum-core"]
 signed = ["cookie/signed"]
 
 [dependencies]
-axum = { version = "0.3", optional = true }
+async-trait = "0.1"
+axum-core = { version = "0.1", optional = true }
 cookie = { version = "0.15", features = ["percent-encode"] }
 futures-util = "0.3"
 http = "0.2"
@@ -26,7 +27,7 @@ tower-layer = "0.3"
 tower-service = "0.3"
 
 [dev-dependencies]
-axum = "0.3"
+axum = "0.4"
 hyper = "0.14"
 rusty-hook = "0.11"
 tokio = { version = "1", features = ["full"] }
@@ -39,8 +40,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [[example]]
 name = "counter"
-required-features = ["axum"]
+required-features = ["axum-core"]
 
 [[example]]
 name = "hello_world"
-required-features = ["axum"]
+required-features = ["axum-core"]

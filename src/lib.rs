@@ -9,7 +9,7 @@
 //! use std::net::SocketAddr;
 //! use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 //!
-//! # #[cfg(feature = "axum")]
+//! # #[cfg(feature = "axum-core")]
 //! #[tokio::main]
 //! async fn main() {
 //!     let app = Router::new()
@@ -22,7 +22,7 @@
 //!         .await
 //!         .unwrap();
 //! }
-//! # #[cfg(not(feature = "axum"))]
+//! # #[cfg(not(feature = "axum-core"))]
 //! # fn main() {}
 //!
 //! async fn handler(cookies: Cookies) -> &'static str {
@@ -58,8 +58,8 @@ pub use cookie::Key;
 
 pub use cookie::Cookie;
 
-#[cfg(feature = "axum")]
-#[cfg_attr(docsrs, doc(cfg(feature = "axum")))]
+#[cfg(feature = "axum-core")]
+#[cfg_attr(docsrs, doc(cfg(feature = "axum-core")))]
 mod extract;
 
 #[cfg(feature = "signed")]
@@ -169,7 +169,7 @@ fn jar_from_str(s: &str) -> CookieJar {
     jar
 }
 
-#[cfg(all(test, feature = "axum"))]
+#[cfg(all(test, feature = "axum-core"))]
 mod tests {
     use crate::{CookieManagerLayer, Cookies};
     use axum::{

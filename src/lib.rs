@@ -53,7 +53,10 @@ pub use self::service::{CookieManager, CookieManagerLayer};
 #[cfg(feature = "signed")]
 pub use self::signed::SignedCookies;
 
-#[cfg(feature = "signed")]
+#[cfg(feature = "private")]
+pub use self::private::PrivateCookies;
+
+#[cfg(any(feature = "signed", feature = "private"))]
 pub use cookie::Key;
 
 pub use cookie::Cookie;
@@ -64,6 +67,9 @@ mod extract;
 
 #[cfg(feature = "signed")]
 mod signed;
+
+#[cfg(feature = "private")]
+mod private;
 
 pub mod service;
 
@@ -134,6 +140,28 @@ impl Cookies {
     #[cfg(feature = "signed")]
     pub fn signed<'a>(&self, key: &'a cookie::Key) -> SignedCookies<'a> {
         SignedCookies::new(self, key)
+    }
+
+    /// Returns a child [`PrivateCookies`] jar for encrypting and decrypting cookies.
+    ///
+    /// # Example:
+    /// ```
+    /// use cookie::{Cookie, Key};
+    /// use tower_cookies::Cookies;
+    ///
+    /// let cookies = Cookies::default();
+    /// let key = Key::generate();
+    /// let private = cookies.private(&key);
+    ///
+    /// let foo = Cookie::new("foo", "bar");
+    /// private.add(foo.clone());
+    ///
+    /// assert_eq!(private.get("foo"), Some(foo.clone()));
+    /// assert_ne!(cookies.get("foo"), Some(foo));
+    /// ```
+    #[cfg(feature = "private")]
+    pub fn private<'a>(&self, key: &'a cookie::Key) -> PrivateCookies<'a> {
+        PrivateCookies::new(self, key)
     }
 }
 

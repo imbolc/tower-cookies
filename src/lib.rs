@@ -179,7 +179,7 @@ impl Inner {
                 .header
                 .as_ref()
                 .and_then(|h| std::str::from_utf8(h.as_bytes()).ok())
-                .map(|s| jar_from_str(s))
+                .map(jar_from_str)
                 .unwrap_or_default();
             self.jar = Some(jar);
         }

@@ -2,14 +2,14 @@
 authors = ["imbolc"]
 categories = ["web-programming"]
 description = "Cookie manager middleware for tower."
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/imbolc/tower-cookies"
 keywords = ["axum", "cookie", "cookies", "tower"]
 license = "MIT"
 name = "tower-cookies"
 readme = "README.md"
 repository = "https://github.com/imbolc/tower-cookies"
-version = "0.4.0"
+version = "0.4.1"
 
 [features]
 default = ["axum-core"]

@@ -14,6 +14,7 @@ version = "0.4.0"
 [features]
 default = ["axum-core"]
 signed = ["cookie/signed"]
+private = ["cookie/secure"]
 
 [dependencies]
 async-trait = "0.1"

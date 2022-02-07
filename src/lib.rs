@@ -256,6 +256,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn read_multi_header_cookies() {
+        let req = Request::builder()
+            .uri("/list")
+            .header(header::COOKIE, "foo=1")
+            .header(header::COOKIE, "bar=2")
+            .body(Body::empty())
+            .unwrap();
+        let res = app().oneshot(req).await.unwrap();
+        assert_eq!(body_string(res.into_body()).await, "bar=2, foo=1");
+    }
+
+    #[tokio::test]
     async fn add_cookies() {
         let req = Request::builder()
             .uri("/add")

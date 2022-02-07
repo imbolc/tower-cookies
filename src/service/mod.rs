@@ -39,6 +39,7 @@ where
         let value = req.headers().get(header::COOKIE).cloned();
         let cookies = Cookies::new(value);
         req.extensions_mut().insert(cookies.clone());
+        dbg!("here");
 
         ResponseFuture {
             future: self.inner.call(req),

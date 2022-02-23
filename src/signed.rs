@@ -51,14 +51,14 @@ mod tests {
     #[test]
     fn get_absent() {
         let key = Key::generate();
-        let cookies = Cookies::new(None);
+        let cookies = Cookies::new(vec![]);
         assert_eq!(cookies.signed(&key).get("foo"), None);
     }
 
     #[test]
     fn add_get_signed() {
         let key = Key::generate();
-        let cookies = Cookies::new(None);
+        let cookies = Cookies::new(vec![]);
         let cookie = Cookie::new("foo", "bar");
         let signed = cookies.signed(&key);
         signed.add(cookie.clone());
@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn add_signed_get_raw() {
         let key = Key::generate();
-        let cookies = Cookies::new(None);
+        let cookies = Cookies::new(vec![]);
         let cookie = Cookie::new("foo", "bar");
         cookies.signed(&key).add(cookie.clone());
         assert_ne!(cookies.get("foo").unwrap(), cookie);
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn add_raw_get_signed() {
         let key = Key::generate();
-        let cookies = Cookies::new(None);
+        let cookies = Cookies::new(vec![]);
         let cookie = Cookie::new("foo", "bar");
         cookies.add(cookie);
         assert_eq!(cookies.signed(&key).get("foo"), None);
@@ -87,7 +87,7 @@ mod tests {
     fn messed_keys() {
         let key1 = Key::generate();
         let key2 = Key::generate();
-        let cookies = Cookies::new(None);
+        let cookies = Cookies::new(vec![]);
         let cookie = Cookie::new("foo", "bar");
         cookies.signed(&key1).add(cookie);
         assert_eq!(cookies.signed(&key2).get("foo"), None);
@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn remove() {
         let key = Key::generate();
-        let cookies = Cookies::new(None);
+        let cookies = Cookies::new(vec![]);
         let cookie = Cookie::new("foo", "bar");
         let signed = cookies.signed(&key);
         signed.add(cookie.clone());

@@ -28,7 +28,7 @@ tower-layer = "0.3"
 tower-service = "0.3"
 
 [dev-dependencies]
-axum = { version = "0.4", features = ["http2"] }
+axum = "0.4"
 hyper = "0.14"
 rusty-hook = "0.11"
 tokio = { version = "1", features = ["full"] }

@@ -80,9 +80,9 @@ pub struct Cookies {
 }
 
 impl Cookies {
-    fn new(header: Option<HeaderValue>) -> Self {
+    fn new(headers: Vec<HeaderValue>) -> Self {
         let inner = Inner {
-            header,
+            headers,
             ..Default::default()
         };
         Self {
@@ -167,7 +167,7 @@ impl Cookies {
 
 #[derive(Debug, Default)]
 struct Inner {
-    header: Option<HeaderValue>,
+    headers: Vec<HeaderValue>,
     jar: Option<CookieJar>,
     changed: bool,
 }
@@ -175,26 +175,20 @@ struct Inner {
 impl Inner {
     fn jar(&mut self) -> &mut CookieJar {
         if self.jar.is_none() {
-            let jar = self
-                .header
-                .as_ref()
-                .and_then(|h| std::str::from_utf8(h.as_bytes()).ok())
-                .map(jar_from_str)
-                .unwrap_or_default();
+            let mut jar = CookieJar::new();
+            for header in &self.headers {
+                if let Ok(header_str) = std::str::from_utf8(header.as_bytes()) {
+                    for cookie_str in header_str.split(';') {
+                        if let Ok(cookie) = cookie::Cookie::parse_encoded(cookie_str.to_owned()) {
+                            jar.add_original(cookie);
+                        }
+                    }
+                }
+            }
             self.jar = Some(jar);
         }
         self.jar.as_mut().unwrap()
     }
-}
-
-fn jar_from_str(s: &str) -> CookieJar {
-    let mut jar = CookieJar::new();
-    for cookie_str in s.split(';').map(str::trim) {
-        if let Ok(cookie) = cookie::Cookie::parse_encoded(cookie_str) {
-            jar.add_original(cookie.into_owned());
-        }
-    }
-    jar
 }
 
 #[cfg(all(test, feature = "axum-core"))]

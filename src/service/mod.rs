@@ -36,10 +36,14 @@ where
     }
 
     fn call(&mut self, mut req: Request<ReqBody>) -> Self::Future {
-        let value = req.headers().get(header::COOKIE).cloned();
+        let value = req
+            .headers()
+            .get_all(header::COOKIE)
+            .iter()
+            .cloned()
+            .collect();
         let cookies = Cookies::new(value);
         req.extensions_mut().insert(cookies.clone());
-        dbg!("here");
 
         ResponseFuture {
             future: self.inner.call(req),

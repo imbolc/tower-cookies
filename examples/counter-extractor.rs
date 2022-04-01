@@ -21,13 +21,7 @@ where
     type Rejection = (http::StatusCode, &'static str);
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let extensions = req.extensions().ok_or((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Can't extract cookies: extensions has been taken by another extractor",
-        ))?;
-
-        // Getting initiallized cookies from request extensions
-        let cookies = extensions.get::<Cookies>().cloned().ok_or((
+        let cookies = req.extensions().get::<Cookies>().cloned().ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Can't extract cookies. Is `CookieManagerLayer` enabled?",
         ))?;

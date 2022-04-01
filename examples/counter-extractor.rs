@@ -5,7 +5,6 @@
 use async_trait::async_trait;
 use axum::{routing::get, Router};
 use axum_core::extract::{FromRequest, RequestParts};
-use http::StatusCode;
 use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 
@@ -21,10 +20,7 @@ where
     type Rejection = (http::StatusCode, &'static str);
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let cookies = req.extensions().get::<Cookies>().cloned().ok_or((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Can't extract cookies. Is `CookieManagerLayer` enabled?",
-        ))?;
+        let cookies = Cookies::from_request(req).await?;
 
         let visited = cookies
             .get(COOKIE_NAME)

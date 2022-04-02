@@ -45,6 +45,7 @@
 use cookie::CookieJar;
 use http::HeaderValue;
 use parking_lot::Mutex;
+use std::borrow::Cow;
 use std::sync::Arc;
 
 #[doc(inline)]
@@ -105,11 +106,13 @@ impl Cookies {
     }
 
     /// Removes [`Cookie`] from this jar.
-    pub fn remove(&self, name: impl Into<CookieName>) {
+    pub fn remove(&self, name: impl Into<RemovalCookie>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
-        let cookie = name.into().into();
-        inner.jar().remove(cookie);
+        let jar = inner.jar();
+        if let Some(cookie) = name.into().into_cookie(jar) {
+            jar.remove(cookie);
+        }
     }
 
     /// Returns all the [`Cookie`]s present in this jar.
@@ -192,40 +195,58 @@ impl Inner {
     }
 }
 
-/// Something we can transform into a cookie name
+/// Something we can transform into a removal cookie
 #[allow(clippy::large_enum_variant)]
-pub enum CookieName {
+pub enum RemovalCookie {
     /// Cookie name as `&'static string`
     Str(&'static str),
     /// Cookie name as owned `String`
     String(String),
-    /// Cookie instance
+    /// Cookie instance, should already have corrisponding path and domain
     Cookie(Cookie<'static>),
 }
 
-impl From<CookieName> for Cookie<'static> {
-    fn from(src: CookieName) -> Self {
-        match src {
-            CookieName::Str(s) => Cookie::new(s, ""),
-            CookieName::String(s) => Cookie::new(s, ""),
-            CookieName::Cookie(c) => c,
+impl RemovalCookie {
+    /// Converts it into a removal cookie
+    fn into_cookie(self, jar: &CookieJar) -> Option<Cookie<'static>> {
+        match self {
+            Self::Str(s) => Self::removal_cookie_by_name(jar, s),
+            Self::String(s) => Self::removal_cookie_by_name(jar, s),
+            Self::Cookie(c) => Some(c),
         }
+    }
+
+    fn removal_cookie_by_name(
+        jar: &CookieJar,
+        name: impl Into<Cow<'static, str>>,
+    ) -> Option<Cookie<'static>> {
+        let name = name.into();
+        jar.get(&name).map(|orig| {
+            let mut new = Cookie::new(name, "");
+            if let Some(domain) = orig.domain() {
+                new.set_domain(domain.to_owned());
+            }
+            if let Some(path) = orig.path() {
+                new.set_path(path.to_owned());
+            }
+            new
+        })
     }
 }
 
-impl From<&'static str> for CookieName {
+impl From<&'static str> for RemovalCookie {
     fn from(src: &'static str) -> Self {
         Self::Str(src)
     }
 }
 
-impl From<String> for CookieName {
+impl From<String> for RemovalCookie {
     fn from(src: String) -> Self {
         Self::String(src)
     }
 }
 
-impl From<Cookie<'static>> for CookieName {
+impl From<Cookie<'static>> for RemovalCookie {
     fn from(src: Cookie<'static>) -> Self {
         Self::Cookie(src)
     }

@@ -105,9 +105,10 @@ impl Cookies {
     }
 
     /// Removes [`Cookie`] from this jar.
-    pub fn remove(&self, cookie: Cookie<'static>) {
+    pub fn remove(&self, name: impl Into<CookieName>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
+        let cookie = name.into().into();
         inner.jar().remove(cookie);
     }
 
@@ -191,6 +192,45 @@ impl Inner {
     }
 }
 
+/// Something we can transform into a cookie name
+#[allow(clippy::large_enum_variant)]
+pub enum CookieName {
+    /// Cookie name as `&'static string`
+    Str(&'static str),
+    /// Cookie name as owned `String`
+    String(String),
+    /// Cookie instance
+    Cookie(Cookie<'static>),
+}
+
+impl From<CookieName> for Cookie<'static> {
+    fn from(src: CookieName) -> Self {
+        match src {
+            CookieName::Str(s) => Cookie::new(s, ""),
+            CookieName::String(s) => Cookie::new(s, ""),
+            CookieName::Cookie(c) => c,
+        }
+    }
+}
+
+impl From<&'static str> for CookieName {
+    fn from(src: &'static str) -> Self {
+        Self::Str(src)
+    }
+}
+
+impl From<String> for CookieName {
+    fn from(src: String) -> Self {
+        Self::String(src)
+    }
+}
+
+impl From<Cookie<'static>> for CookieName {
+    fn from(src: Cookie<'static>) -> Self {
+        Self::Cookie(src)
+    }
+}
+
 #[cfg(all(test, feature = "axum-core"))]
 mod tests {
     use crate::{CookieManagerLayer, Cookies};
@@ -228,6 +268,8 @@ mod tests {
                 "/remove",
                 get(|cookies: Cookies| async move {
                     cookies.remove(Cookie::new("foo", ""));
+                    cookies.remove("bar");
+                    cookies.remove(String::from("baz"));
                 }),
             )
             .layer(CookieManagerLayer::new())
@@ -276,15 +318,20 @@ mod tests {
 
     #[tokio::test]
     async fn remove_cookies() {
+        use std::collections::hash_set::HashSet;
+
         let req = Request::builder()
             .uri("/remove")
-            .header(header::COOKIE, "foo=1; bar=2")
+            .header(header::COOKIE, "foo=1; bar=2; baz=3")
             .body(Body::empty())
             .unwrap();
         let res = app().oneshot(req).await.unwrap();
-        let mut hdrs = res.headers().get_all(header::SET_COOKIE).iter();
-        let hdr = hdrs.next().unwrap().to_str().unwrap();
-        assert!(hdr.starts_with("foo=; Max-Age=0"));
-        assert_eq!(hdrs.next(), None);
+        let hdrs = res.headers().get_all(header::SET_COOKIE).iter();
+        let hdrs: HashSet<_> = hdrs.map(|h| h.to_str().unwrap()[..15].to_owned()).collect();
+        let expected = ["foo=; Max-Age=0", "bar=; Max-Age=0", "baz=; Max-Age=0"]
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        assert_eq!(hdrs, expected);
     }
 }

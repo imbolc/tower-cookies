@@ -198,7 +198,7 @@ impl Inner {
 /// Something we can transform into a removal cookie
 #[allow(clippy::large_enum_variant)]
 pub enum RemovalCookie {
-    /// Cookie instance, should already have corrisponding domain and path
+    /// Cookie instance, should already have corresponding domain and path
     Cookie(Cookie<'static>),
     /// Cookie name, the removal cookie will use domain and path of the original one
     Name(Cow<'static, str>),

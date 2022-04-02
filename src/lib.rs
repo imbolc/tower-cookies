@@ -198,51 +198,41 @@ impl Inner {
 /// Something we can transform into a removal cookie
 #[allow(clippy::large_enum_variant)]
 pub enum RemovalCookie {
-    /// Cookie name as `&'static string`
-    Str(&'static str),
-    /// Cookie name as owned `String`
-    String(String),
-    /// Cookie instance, should already have corrisponding path and domain
+    /// Cookie instance, should already have corrisponding domain and path
     Cookie(Cookie<'static>),
+    /// Cookie name, the removal cookie will use domain and path of the original one
+    Name(Cow<'static, str>),
 }
 
 impl RemovalCookie {
-    /// Converts it into a removal cookie
+    /// Converts it into a removal cookie, taking into account domain and path of the original
+    /// cookie
     fn into_cookie(self, jar: &CookieJar) -> Option<Cookie<'static>> {
         match self {
-            Self::Str(s) => Self::removal_cookie_by_name(jar, s),
-            Self::String(s) => Self::removal_cookie_by_name(jar, s),
             Self::Cookie(c) => Some(c),
+            Self::Name(name) => jar.get(&name).map(|orig| {
+                let mut new = Cookie::new(name, "");
+                if let Some(domain) = orig.domain() {
+                    new.set_domain(domain.to_owned());
+                }
+                if let Some(path) = orig.path() {
+                    new.set_path(path.to_owned());
+                }
+                new
+            }),
         }
-    }
-
-    fn removal_cookie_by_name(
-        jar: &CookieJar,
-        name: impl Into<Cow<'static, str>>,
-    ) -> Option<Cookie<'static>> {
-        let name = name.into();
-        jar.get(&name).map(|orig| {
-            let mut new = Cookie::new(name, "");
-            if let Some(domain) = orig.domain() {
-                new.set_domain(domain.to_owned());
-            }
-            if let Some(path) = orig.path() {
-                new.set_path(path.to_owned());
-            }
-            new
-        })
     }
 }
 
 impl From<&'static str> for RemovalCookie {
     fn from(src: &'static str) -> Self {
-        Self::Str(src)
+        Self::Name(src.into())
     }
 }
 
 impl From<String> for RemovalCookie {
     fn from(src: String) -> Self {
-        Self::String(src)
+        Self::Name(src.into())
     }
 }
 

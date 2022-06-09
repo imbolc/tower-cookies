@@ -23,7 +23,7 @@ async fn handler(cookies: Cookies) -> String {
         .and_then(|c| c.value().parse().ok())
         .unwrap_or(0);
     if visited > 10 {
-        cookies.remove(Cookie::new(COOKIE_NAME, ""));
+        cookies.remove(COOKIE_NAME);
         "Counter has been reset".into()
     } else {
         cookies.add(Cookie::new(COOKIE_NAME, (visited + 1).to_string()));

@@ -45,6 +45,7 @@
 use cookie::CookieJar;
 use http::HeaderValue;
 use parking_lot::Mutex;
+use std::borrow::Cow;
 use std::sync::Arc;
 
 #[doc(inline)]
@@ -105,10 +106,13 @@ impl Cookies {
     }
 
     /// Removes [`Cookie`] from this jar.
-    pub fn remove(&self, cookie: Cookie<'static>) {
+    pub fn remove(&self, name: impl Into<RemovalCookie>) {
         let mut inner = self.inner.lock();
         inner.changed = true;
-        inner.jar().remove(cookie);
+        let jar = inner.jar();
+        if let Some(cookie) = name.into().into_cookie(jar) {
+            jar.remove(cookie);
+        }
     }
 
     /// Returns all the [`Cookie`]s present in this jar.
@@ -191,6 +195,53 @@ impl Inner {
     }
 }
 
+/// Something we can transform into a removal cookie
+#[allow(clippy::large_enum_variant)]
+pub enum RemovalCookie {
+    /// Cookie instance, should already have corresponding domain and path
+    Cookie(Cookie<'static>),
+    /// Cookie name, the removal cookie will use domain and path of the original one
+    Name(Cow<'static, str>),
+}
+
+impl RemovalCookie {
+    /// Converts it into a removal cookie, taking into account domain and path of the original
+    /// cookie
+    fn into_cookie(self, jar: &CookieJar) -> Option<Cookie<'static>> {
+        match self {
+            Self::Cookie(c) => Some(c),
+            Self::Name(name) => jar.get(&name).map(|orig| {
+                let mut new = Cookie::new(name, "");
+                if let Some(domain) = orig.domain() {
+                    new.set_domain(domain.to_owned());
+                }
+                if let Some(path) = orig.path() {
+                    new.set_path(path.to_owned());
+                }
+                new
+            }),
+        }
+    }
+}
+
+impl From<&'static str> for RemovalCookie {
+    fn from(src: &'static str) -> Self {
+        Self::Name(src.into())
+    }
+}
+
+impl From<String> for RemovalCookie {
+    fn from(src: String) -> Self {
+        Self::Name(src.into())
+    }
+}
+
+impl From<Cookie<'static>> for RemovalCookie {
+    fn from(src: Cookie<'static>) -> Self {
+        Self::Cookie(src)
+    }
+}
+
 #[cfg(all(test, feature = "axum-core"))]
 mod tests {
     use crate::{CookieManagerLayer, Cookies};
@@ -228,6 +279,8 @@ mod tests {
                 "/remove",
                 get(|cookies: Cookies| async move {
                     cookies.remove(Cookie::new("foo", ""));
+                    cookies.remove("bar");
+                    cookies.remove(String::from("baz"));
                 }),
             )
             .layer(CookieManagerLayer::new())
@@ -276,15 +329,20 @@ mod tests {
 
     #[tokio::test]
     async fn remove_cookies() {
+        use std::collections::hash_set::HashSet;
+
         let req = Request::builder()
             .uri("/remove")
-            .header(header::COOKIE, "foo=1; bar=2")
+            .header(header::COOKIE, "foo=1; bar=2; baz=3")
             .body(Body::empty())
             .unwrap();
         let res = app().oneshot(req).await.unwrap();
-        let mut hdrs = res.headers().get_all(header::SET_COOKIE).iter();
-        let hdr = hdrs.next().unwrap().to_str().unwrap();
-        assert!(hdr.starts_with("foo=; Max-Age=0"));
-        assert_eq!(hdrs.next(), None);
+        let hdrs = res.headers().get_all(header::SET_COOKIE).iter();
+        let hdrs: HashSet<_> = hdrs.map(|h| h.to_str().unwrap()[..15].to_owned()).collect();
+        let expected = ["foo=; Max-Age=0", "bar=; Max-Age=0", "baz=; Max-Age=0"]
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        assert_eq!(hdrs, expected);
     }
 }

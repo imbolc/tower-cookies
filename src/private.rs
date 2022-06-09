@@ -25,7 +25,7 @@ impl<'a> PrivateCookies<'a> {
     }
 
     /// Returns `Cookie` with the `name` and decrypted contents.
-    pub fn get(&self, name: &str) -> Option<Cookie> {
+    pub fn get(&self, name: &str) -> Option<Cookie<'static>> {
         let mut inner = self.cookies.inner.lock();
         inner.jar().private(self.key).get(name)
     }
@@ -90,10 +90,9 @@ mod tests {
     fn remove() {
         let key = Key::generate();
         let cookies = Cookies::new(vec![]);
-        let cookie = Cookie::new("foo", "bar");
         let private = cookies.private(&key);
-        private.add(cookie.clone());
-        assert!(private.get("foo").is_some());
+        private.add(Cookie::new("foo", "bar"));
+        let cookie = private.get("foo").unwrap();
         private.remove(cookie);
         assert!(private.get("foo").is_none());
     }

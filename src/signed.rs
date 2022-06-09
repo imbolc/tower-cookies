@@ -32,7 +32,7 @@ impl<'a> SignedCookies<'a> {
     /// Returns `Cookie` with the `name` and verifies the authenticity and integrity of the
     /// cookie’s value, returning a `Cookie` with the authenticated value. If the cookie cannot be
     /// found, or the cookie fails to verify, None is returned.
-    pub fn get(&self, name: &str) -> Option<Cookie> {
+    pub fn get(&self, name: &str) -> Option<Cookie<'static>> {
         let mut inner = self.cookies.inner.lock();
         inner.jar().signed(self.key).get(name)
     }
@@ -97,10 +97,9 @@ mod tests {
     fn remove() {
         let key = Key::generate();
         let cookies = Cookies::new(vec![]);
-        let cookie = Cookie::new("foo", "bar");
         let signed = cookies.signed(&key);
-        signed.add(cookie.clone());
-        assert!(signed.get("foo").is_some());
+        signed.add(Cookie::new("foo", "bar"));
+        let cookie = signed.get("foo").unwrap();
         signed.remove(cookie);
         assert!(signed.get("foo").is_none());
     }

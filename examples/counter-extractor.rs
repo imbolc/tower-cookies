@@ -4,7 +4,8 @@
 //! extractor.
 use async_trait::async_trait;
 use axum::{routing::get, Router};
-use axum_core::extract::{FromRequest, RequestParts};
+use axum_core::extract::FromRequestParts;
+use http::request::Parts;
 use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 
@@ -13,14 +14,14 @@ const COOKIE_NAME: &str = "visited";
 struct Counter(usize);
 
 #[async_trait]
-impl<B> FromRequest<B> for Counter
+impl<S> FromRequestParts<S> for Counter
 where
-    B: Send,
+    S: Send + Sync,
 {
     type Rejection = (http::StatusCode, &'static str);
 
-    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let cookies = Cookies::from_request(req).await?;
+    async fn from_request_parts(req: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let cookies = Cookies::from_request_parts(req, state).await?;
 
         let visited = cookies
             .get(COOKIE_NAME)

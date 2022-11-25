@@ -1,6 +1,6 @@
 //! A cookie manager middleware built on top of [tower].
 //!
-//! # Example
+//! ## Example
 //!
 //! With [axum]:
 //!

@@ -58,7 +58,7 @@ We appreciate all kinds of contributions, thank you!
 
 ### Note on README
 
-Most of the readme is automatically copied from the crate documentation by [cargo-readme-sync][].
+Most of the readme is automatically copied from the crate documentation by [cargo-sync-readme][].
 This way the readme is always in sync with the docs and examples are tested.
 
 So if you find a part of the readme you'd like to change between `<!-- cargo-sync-readme start -->`
@@ -79,5 +79,5 @@ If you have [rusty-hook] installed the changes will apply automatically on commi
 
 This project is licensed under the [MIT license](LICENSE).
 
-[cargo-readme-sync]: https://github.com/phaazon/cargo-sync-readme
+[cargo-sync-readme]: https://github.com/phaazon/cargo-sync-readme
 [rusty-hook]: https://github.com/swellaby/rusty-hook

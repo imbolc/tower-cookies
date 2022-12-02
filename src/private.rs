@@ -1,11 +1,11 @@
 use crate::Cookies;
 use cookie::{Cookie, Key};
 
-/// A child cookie jar that provides authenticated encryption for its cookies.
+/// A cookie jar that provides authenticated encryption for its cookies.
 ///
 /// A _private_ child jar signs and encrypts all the cookies added to it and
-/// verifies and decrypts cookies retrieved from it. Any cookies stored in a
-/// `PrivateJar` are simultaneously assured confidentiality, integrity, and
+/// verifies and decrypts cookies retrieved from it. Any cookies stored in
+/// `PrivateCookies` are simultaneously assured confidentiality, integrity, and
 /// authenticity. In other words, clients cannot discover nor tamper with the
 /// contents of a cookie, nor can they fabricate cookie data.
 pub struct PrivateCookies<'a> {
@@ -14,9 +14,9 @@ pub struct PrivateCookies<'a> {
 }
 
 impl<'a> PrivateCookies<'a> {
-    /// Creates a new child `PrivateJar` with parent `parent` and key `key`.
-    /// This method is typically called indirectly via the `signed` method of
-    /// `CookieJar`.
+    /// Creates an instance of `PrivateCookies` with parent `cookies` and key `key`.
+    /// This method is typically called indirectly via the `private`
+    /// method of [`Cookies`].
     pub(crate) fn new(cookies: &Cookies, key: &'a Key) -> Self {
         Self {
             cookies: cookies.clone(),

@@ -61,6 +61,9 @@ pub use cookie::Key;
 
 pub use cookie::Cookie;
 
+#[doc(inline)]
+pub use cookie;
+
 #[cfg(feature = "axum-core")]
 #[cfg_attr(docsrs, doc(cfg(feature = "axum-core")))]
 mod extract;

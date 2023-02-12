@@ -19,7 +19,7 @@ private = ["cookie/secure"]
 [dependencies]
 async-trait = "0.1"
 axum-core = { version = "0.3", optional = true }
-cookie = { version = "0.16", features = ["percent-encode"] }
+cookie = { version = "0.17", features = ["percent-encode"] }
 futures-util = "0.3"
 http = "0.2"
 parking_lot = "0.12"

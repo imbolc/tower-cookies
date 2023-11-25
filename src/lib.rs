@@ -17,8 +17,8 @@
 //!         .layer(CookieManagerLayer::new());
 //!
 //!     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-//!     axum::Server::bind(&addr)
-//!         .serve(app.into_make_service())
+//!     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+//!     axum::serve(listener, app.into_make_service())
 //!         .await
 //!         .unwrap();
 //! }
@@ -197,13 +197,10 @@ impl Inner {
 #[cfg(all(test, feature = "axum-core"))]
 mod tests {
     use crate::{CookieManagerLayer, Cookies};
-    use axum::{
-        body::{Body, BoxBody},
-        routing::get,
-        Router,
-    };
+    use axum::{body::Body, routing::get, Router};
     use cookie::Cookie;
     use http::{header, Request};
+    use http_body_util::BodyExt;
     use tower::ServiceExt;
 
     fn app() -> Router {
@@ -236,8 +233,8 @@ mod tests {
             .layer(CookieManagerLayer::new())
     }
 
-    async fn body_string(body: BoxBody) -> String {
-        let bytes = hyper::body::to_bytes(body).await.unwrap();
+    async fn body_string(body: Body) -> String {
+        let bytes = body.collect().await.unwrap().to_bytes();
         String::from_utf8_lossy(&bytes).into()
     }
 

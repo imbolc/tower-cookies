@@ -6,7 +6,6 @@ use async_trait::async_trait;
 use axum::{routing::get, Router};
 use axum_core::extract::FromRequestParts;
 use http::request::Parts;
-use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 
 const COOKIE_NAME: &str = "visited";
@@ -40,11 +39,8 @@ async fn main() {
         .route("/", get(handler))
         .layer(CookieManagerLayer::new());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn handler(counter: Counter) -> String {

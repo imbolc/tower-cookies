@@ -6,7 +6,6 @@
 //!
 //! ```rust,no_run
 //! use axum::{routing::get, Router};
-//! use std::net::SocketAddr;
 //! use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 //!
 //! # #[cfg(feature = "axum-core")]
@@ -16,11 +15,8 @@
 //!         .route("/", get(handler))
 //!         .layer(CookieManagerLayer::new());
 //!
-//!     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-//!     axum::Server::bind(&addr)
-//!         .serve(app.into_make_service())
-//!         .await
-//!         .unwrap();
+//!    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+//!    axum::serve(listener, app).await.unwrap();
 //! }
 //! # #[cfg(not(feature = "axum-core"))]
 //! # fn main() {}
@@ -197,13 +193,12 @@ impl Inner {
 #[cfg(all(test, feature = "axum-core"))]
 mod tests {
     use crate::{CookieManagerLayer, Cookies};
-    use axum::{
-        body::{Body, BoxBody},
-        routing::get,
-        Router,
-    };
+    use axum::{body::Body, routing::get, Router};
     use cookie::Cookie;
     use http::{header, Request};
+    use tokio::io::AsyncReadExt;
+    use tokio_stream::StreamExt;
+    use tokio_util::io::StreamReader;
     use tower::ServiceExt;
 
     fn app() -> Router {
@@ -236,8 +231,15 @@ mod tests {
             .layer(CookieManagerLayer::new())
     }
 
-    async fn body_string(body: BoxBody) -> String {
-        let bytes = hyper::body::to_bytes(body).await.unwrap();
+    async fn body_string(body: Body) -> String {
+        // TODO: There's likely a better way of converting the body to bytes.
+        let stream = body.into_data_stream();
+        let stream = stream.map(|result| {
+            result.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))
+        });
+        let mut read = StreamReader::new(stream);
+        let mut bytes = vec![];
+        read.read_to_end(&mut bytes).await.unwrap();
         String::from_utf8_lossy(&bytes).into()
     }
 

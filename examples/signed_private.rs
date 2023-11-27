@@ -2,7 +2,6 @@
 //! Can be run by: `cargo run --all-features --example signed_private`
 use axum::{routing::get, Router};
 use once_cell::sync::OnceCell;
-use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies, Key};
 
 const COOKIE_NAME: &str = "visited_private";
@@ -17,11 +16,8 @@ async fn main() {
         .route("/", get(handler))
         .layer(CookieManagerLayer::new());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn handler(cookies: Cookies) -> String {

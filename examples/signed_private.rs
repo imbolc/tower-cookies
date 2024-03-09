@@ -1,12 +1,12 @@
-//! The counter example using private / signed cookies instead of raw ones
+//! The counter-example using private / signed cookies instead of raw ones
 //! Can be run by: `cargo run --all-features --example signed_private`
 use axum::{routing::get, Router};
-use once_cell::sync::OnceCell;
 use std::net::SocketAddr;
+use std::sync::OnceLock;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies, Key};
 
 const COOKIE_NAME: &str = "visited_private";
-static KEY: OnceCell<Key> = OnceCell::new();
+static KEY: OnceLock<Key> = OnceLock::new();
 
 #[tokio::main]
 async fn main() {

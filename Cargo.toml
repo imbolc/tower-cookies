@@ -10,7 +10,7 @@ license = "MIT"
 name = "tower-cookies"
 readme = "README.md"
 repository = "https://github.com/imbolc/tower-cookies"
-version = "0.10.0"
+version = "0.11.0-rc1"
 
 [features]
 default = ["axum-core"]
@@ -18,8 +18,7 @@ signed = ["cookie/signed"]
 private = ["cookie/secure"]
 
 [dependencies]
-async-trait = "0.1"
-axum-core = { version = "0.4", optional = true }
+axum-core = { version = "0.5.0-rc.1", optional = true }
 cookie = { version = "0.18", features = ["percent-encode"] }
 futures-util = "0.3"
 http = "1.0"
@@ -29,10 +28,10 @@ tower-layer = "0.3"
 tower-service = "0.3"
 
 [dev-dependencies]
-axum = "0.7"
+axum = "0.8.0-rc.1"
 rusty-hook = "0.11"
 tokio = { version = "1", features = ["rt-multi-thread"] }
-tower = "0.4"
+tower = "0.5.2"
 tracing-subscriber = "0.3"
 http-body-util = "0.1"
 

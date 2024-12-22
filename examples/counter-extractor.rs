@@ -2,7 +2,6 @@
 //! [`axum_core::extract::FromRequest::from_request`] implementation.
 //! The behavior is the same as `examples/counter.rs` but cookies leveraging is moved into an
 //! extractor.
-use async_trait::async_trait;
 use axum::{routing::get, Router};
 use axum_core::extract::FromRequestParts;
 use http::request::Parts;
@@ -13,7 +12,6 @@ const COOKIE_NAME: &str = "visited";
 
 struct Counter(usize);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for Counter
 where
     S: Send + Sync,

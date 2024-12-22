@@ -1,9 +1,7 @@
 use crate::Cookies;
-use async_trait::async_trait;
 use axum_core::extract::FromRequestParts;
 use http::{request::Parts, StatusCode};
 
-#[async_trait]
 impl<S> FromRequestParts<S> for Cookies
 where
     S: Sync + Send,

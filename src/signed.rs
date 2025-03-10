@@ -38,6 +38,11 @@ impl<'a> SignedCookies<'a> {
     }
 
     /// Removes the `cookie` from the parent jar.
+    ///
+    /// **To properly generate the removal cookie, `cookie` must contain the same `path` and
+    /// `domain` as the cookie that was initially set.** In particular, this means that passing a
+    ///  cookie from a browser to this method won't work because browsers don't set the cookie's
+    /// `path` attribute.
     pub fn remove(&self, cookie: Cookie<'static>) {
         self.cookies.remove(cookie);
     }

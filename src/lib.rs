@@ -102,7 +102,7 @@ impl Cookies {
     }
 
     /// Returns the [`Cookie`] with the given name. Returns [`None`] if it doesn't exist.
-    pub fn get(&self, name: &str) -> Option<Cookie> {
+    pub fn get(&self, name: &str) -> Option<Cookie<'_>> {
         let mut inner = self.inner.lock();
         inner.jar().get(name).cloned()
     }
@@ -123,7 +123,7 @@ impl Cookies {
     ///
     /// This method collects [`Cookie`]s into a vector instead of iterating through them to
     /// minimize the mutex locking time.
-    pub fn list(&self) -> Vec<Cookie> {
+    pub fn list(&self) -> Vec<Cookie<'_>> {
         let mut inner = self.inner.lock();
         inner.jar().iter().cloned().collect()
     }

@@ -12,6 +12,10 @@ readme = "README.md"
 repository = "https://github.com/imbolc/tower-cookies"
 version = "0.11.0"
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 default = ["axum-core"]
 signed = ["cookie/signed"]
@@ -30,15 +34,9 @@ tower-service = "0.3"
 
 [dev-dependencies]
 axum = "0.8"
-rusty-hook = "0.11"
+http-body-util = "0.1"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 tower = "0.5"
-tracing-subscriber = "0.3"
-http-body-util = "0.1"
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
 
 [[example]]
 name = "counter"
